@@ -704,7 +704,7 @@ func (s *Server) solicitGateway(cfg *gatewayCfg, firstConnect bool) {
 			} else {
 				s.Debugf(connFmt, typeStr, cfg.Name, u.Host, address, attempts)
 			}
-			conn, err := s.network.DialTimeoutCause("tcp", address, DEFAULT_ROUTE_DIAL, "route")
+			conn, err := s.network.DialTimeoutCause("tcp", address, DEFAULT_ROUTE_DIAL, "gateway")
 			if err == nil {
 				// We could connect, create the gateway connection and return.
 				s.createGateway(cfg, u, conn)
