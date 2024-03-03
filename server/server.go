@@ -2645,7 +2645,7 @@ func (s *Server) AcceptLoop(clr chan struct{}) {
 	// Setup state that can enable shutdown
 	s.mu.Lock()
 	hp := net.JoinHostPort(opts.Host, strconv.Itoa(opts.Port))
-	l, e := natsListen("tcp", hp)
+	l, e := s.network.ListenCause("tcp", hp, "client")
 	s.listenerErr = e
 	if e != nil {
 		s.mu.Unlock()
@@ -2707,15 +2707,24 @@ func (s *Server) AcceptLoop(clr chan struct{}) {
 // state of the DontListen option.
 func (s *Server) InProcessConn() (net.Conn, error) {
 	pl, pr := net.Pipe()
-	if !s.startGoRoutine(func() {
-		s.createClientInProcess(pl)
-		s.grWG.Done()
-	}) {
+	if e := s.RegisterExternalConn(pl); e != nil {
 		pl.Close()
 		pr.Close()
-		return nil, fmt.Errorf("failed to create connection")
+		return nil, e
 	}
 	return pr, nil
+}
+
+// RegisterConn will register an externally accepted connection with the server.
+// This is used for in-process connections and for testing.
+func (s *Server) RegisterExternalConn(con net.Conn) error {
+	if !s.startGoRoutine(func() {
+		s.createClientInProcess(con)
+		s.grWG.Done()
+	}) {
+		return fmt.Errorf("failed to create connection")
+	}
+	return nil
 }
 
 func (s *Server) acceptConnections(l net.Listener, acceptName string, createFunc func(conn net.Conn), errFunc func(err error) bool) {
