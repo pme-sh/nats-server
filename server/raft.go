@@ -2430,6 +2430,9 @@ func (n *raft) Quorum() bool {
 	return false
 }
 
+func (n *raft) proposalAutoAcceptLocked() bool {
+	return n.csz == 1
+}
 func (n *raft) implicitLeaderLocked() bool {
 	return n.csz == 1 || (n.csz == 2 && n.ipeer)
 }
@@ -3556,7 +3559,11 @@ func (n *raft) sendAppendEntry(entries []*Entry) {
 			n.warn("%d append entries pending", len(n.pae))
 		}
 	}
-	n.sendRPC(n.asubj, n.areply, ae.buf)
+	if n.proposalAutoAcceptLocked() {
+		n.resp.push(newAppendEntryResponse(n.term, n.pindex, n.id, true))
+	} else {
+		n.sendRPC(n.asubj, n.areply, ae.buf)
+	}
 	if !shouldStore {
 		ae.returnToPool()
 	}
