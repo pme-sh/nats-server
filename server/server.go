@@ -357,6 +357,9 @@ type Server struct {
 
 	// Queue to process JS API requests that come from routes (or gateways)
 	jsAPIRoutedReqs *ipQueue[*jsAPIRoutedReq]
+
+	// Dial and listen overrides.
+	network NetworkIntercept
 }
 
 // For tracking JS nodes.
@@ -716,6 +719,10 @@ func NewServer(opts *Options) (*Server, error) {
 		rateLimitLoggingCh: make(chan time.Duration, 1),
 		leafNodeEnabled:    opts.LeafNode.Port != 0 || len(opts.LeafNode.Remotes) > 0,
 		syncOutSem:         make(chan struct{}, maxConcurrentSyncRequests),
+		network:            opts.NetworkIntercept,
+	}
+	if s.network == nil {
+		s.network = natsNetworkIntercept{}
 	}
 
 	// Fill up the maximum in flight syncRequests for this server.
@@ -2778,7 +2785,7 @@ func (s *Server) StartProfiler() {
 
 	s.mu.Lock()
 	hp := net.JoinHostPort(opts.Host, strconv.Itoa(port))
-	l, err := net.Listen("tcp", hp)
+	l, err := s.network.ListenCause("tcp", hp, "profiler")
 
 	if err != nil {
 		s.mu.Unlock()
@@ -2942,7 +2949,7 @@ func (s *Server) startMonitoring(secure bool) error {
 			port = 0
 		}
 		hp = net.JoinHostPort(opts.HTTPHost, strconv.Itoa(port))
-		httpListener, err = net.Listen("tcp", hp)
+		httpListener, err = s.network.ListenCause("tcp", hp, "monitor")
 	}
 
 	if err != nil {

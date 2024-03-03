@@ -489,7 +489,7 @@ func (s *Server) startGatewayAcceptLoop() {
 
 	s.mu.Lock()
 	hp := net.JoinHostPort(opts.Gateway.Host, strconv.Itoa(port))
-	l, e := natsListen("tcp", hp)
+	l, e := s.network.ListenCause("tcp", hp, "gateway")
 	s.gatewayListenerErr = e
 	if e != nil {
 		s.mu.Unlock()
@@ -704,7 +704,7 @@ func (s *Server) solicitGateway(cfg *gatewayCfg, firstConnect bool) {
 			} else {
 				s.Debugf(connFmt, typeStr, cfg.Name, u.Host, address, attempts)
 			}
-			conn, err := natsDialTimeout("tcp", address, DEFAULT_ROUTE_DIAL)
+			conn, err := s.network.DialTimeoutCause("tcp", address, DEFAULT_ROUTE_DIAL, "route")
 			if err == nil {
 				// We could connect, create the gateway connection and return.
 				s.createGateway(cfg, u, conn)

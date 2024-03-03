@@ -1099,7 +1099,7 @@ func (s *Server) startWebsocketServer() {
 		hl, err = tls.Listen("tcp", hp, config)
 	} else {
 		proto = wsSchemePrefix
-		hl, err = net.Listen("tcp", hp)
+		hl, err = s.network.ListenCause("tcp", hp, "ws")
 	}
 	s.websocket.listenerErr = err
 	if err != nil {

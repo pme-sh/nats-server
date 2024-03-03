@@ -2432,7 +2432,7 @@ func (s *Server) startRouteAcceptLoop() {
 	}
 
 	hp := net.JoinHostPort(opts.Cluster.Host, strconv.Itoa(port))
-	l, e := natsListen("tcp", hp)
+	l, e := s.network.ListenCause("tcp", hp, "route")
 	s.routeListenerErr = e
 	if e != nil {
 		s.mu.Unlock()
@@ -2637,7 +2637,7 @@ func (s *Server) connectToRoute(rURL *url.URL, tryForEver, firstConnect bool, ac
 		}
 		if err == nil {
 			s.Debugf("Trying to connect to route on %s (%s)", rURL.Host, address)
-			conn, err = natsDialTimeout("tcp", address, DEFAULT_ROUTE_DIAL)
+			conn, err = s.network.DialTimeoutCause("tcp", address, DEFAULT_ROUTE_DIAL, "route")
 		}
 		if err != nil {
 			attempts++

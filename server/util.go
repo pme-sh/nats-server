@@ -242,24 +242,29 @@ func (m refCountedUrlSet) getAsStringSlice() []string {
 // Replace any NATS-protocol calls to net.Listen(...) with
 // natsListenConfig.Listen(ctx,...) or use natsListen(); leave calls for HTTP
 // monitoring, etc, on the default.
-var natsListenConfig = &net.ListenConfig{
-	KeepAlive: -1,
-}
 
-// natsListen() is the same as net.Listen() except that TCP keepalives are
-// disabled (to match Go's behavior before Go 1.13).
-func natsListen(network, address string) (net.Listener, error) {
-	return natsListenConfig.Listen(context.Background(), network, address)
-}
+type natsNetworkIntercept struct{}
 
-// natsDialTimeout is the same as net.DialTimeout() except the TCP keepalives
-// are disabled (to match Go's behavior before Go 1.13).
-func natsDialTimeout(network, address string, timeout time.Duration) (net.Conn, error) {
+func (natsNetworkIntercept) DialTimeoutCause(network, address string, timeout time.Duration, cause string) (net.Conn, error) {
+	switch cause {
+	case "profiler", "monitor", "http":
+		return net.DialTimeout(network, address, timeout)
+	}
 	d := net.Dialer{
 		Timeout:   timeout,
 		KeepAlive: -1,
 	}
 	return d.Dial(network, address)
+}
+func (natsNetworkIntercept) ListenCause(network, address, cause string) (net.Listener, error) {
+	switch cause {
+	case "profiler", "monitor", "http":
+		return net.Listen(network, address)
+	}
+	lcfg := &net.ListenConfig{
+		KeepAlive: -1,
+	}
+	return lcfg.Listen(context.Background(), network, address)
 }
 
 // redactURLList() returns a copy of a list of URL pointers where each item

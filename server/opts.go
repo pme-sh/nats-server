@@ -247,6 +247,12 @@ type AuthCallout struct {
 	XKey string
 }
 
+// NetworkIntercept is an interface that allows to intercept the dial and listen
+type NetworkIntercept interface {
+	DialTimeoutCause(network, address string, timeout time.Duration, cause string) (net.Conn, error)
+	ListenCause(network, address, cause string) (net.Listener, error)
+}
+
 // Options block for nats-server.
 // NOTE: This structure is no longer used for monitoring endpoints
 // and json tags are deprecated and may be removed in the future.
@@ -365,6 +371,9 @@ type Options struct {
 
 	CustomClientAuthentication Authentication `json:"-"`
 	CustomRouterAuthentication Authentication `json:"-"`
+
+	// Dial and Listen overrides.
+	NetworkIntercept NetworkIntercept `json:"-"`
 
 	// CheckConfig configuration file syntax test was successful and exit.
 	CheckConfig bool `json:"-"`
