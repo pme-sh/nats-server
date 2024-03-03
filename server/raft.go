@@ -144,6 +144,7 @@ type raft struct {
 	csz   int             // Cluster size
 	qn    int             // Number of nodes needed to establish quorum
 	peers map[string]*lps // Other peers in the Raft group
+	ipeer bool            // Implicit leadership when quorum is impossible
 
 	removed map[string]struct{}            // Peers that were removed from the group
 	acks    map[uint64]map[string]struct{} // Append entry responses/acks, map of entry index -> peer ID
@@ -285,9 +286,6 @@ func (s *Server) bootstrapRaftNode(cfg *RaftConfig, knownPeers []string, allPeer
 	// We need to adjust this is all peers are not known.
 	if !allPeersKnown {
 		s.Debugf("Determining expected peer size for JetStream meta group")
-		if expected < 2 {
-			expected = 2
-		}
 		opts := s.getOpts()
 		nrs := len(opts.Routes)
 
@@ -330,7 +328,9 @@ func (s *Server) bootstrapRaftNode(cfg *RaftConfig, knownPeers []string, allPeer
 	}
 	tmpfile.Close()
 	os.Remove(tmpfile.Name())
-
+	if expected <= 1 {
+		os.WriteFile(filepath.Join(cfg.Store, ipeerMarkerFile), []byte{1}, 0644)
+	}
 	return writePeerState(cfg.Store, &peerState{knownPeers, expected, extUndetermined})
 }
 
@@ -389,6 +389,9 @@ func (s *Server) startRaftNode(accName string, cfg *RaftConfig, labels pprofLabe
 		extSt:    ps.domainExt,
 	}
 	n.c.registerWithAccount(sacc)
+	if _, err := os.Stat(filepath.Join(n.sd, ipeerMarkerFile)); err == nil {
+		n.ipeer = true
+	}
 
 	if atomic.LoadInt32(&s.logging.debug) > 0 {
 		n.dflag = true
@@ -808,10 +811,6 @@ func (n *raft) AdjustBootClusterSize(csz int) error {
 	if n.leader != noLeader || n.pleader {
 		return errAdjustBootCluster
 	}
-	// Same floor as bootstrap.
-	if csz < 2 {
-		csz = 2
-	}
 	// Adjust the cluster size and the number of nodes needed to establish
 	// a quorum.
 	n.csz = csz
@@ -827,11 +826,6 @@ func (n *raft) AdjustClusterSize(csz int) error {
 		return errNotLeader
 	}
 	n.Lock()
-	// Same floor as bootstrap.
-	if csz < 2 {
-		csz = 2
-	}
-
 	// Adjust the cluster size and the number of nodes needed to establish
 	// a quorum.
 	n.csz = csz
@@ -1818,6 +1812,10 @@ func (n *raft) run() {
 			ready = len(gw.out)+len(gw.in) > 0
 			gw.RUnlock()
 		}
+		if n.csz == 1 || (n.csz == 2 && n.ipeer) {
+			ready = true
+			break
+		}
 		if !ready {
 			select {
 			case <-s.quitCh:
@@ -1836,6 +1834,10 @@ func (n *raft) run() {
 
 	// Send nil entry to signal the upper layers we are done doing replay/restore.
 	n.apply.push(nil)
+
+	if n.implicitLeaderLocked() {
+		n.switchToLeader()
+	}
 
 	for s.isRunning() {
 		switch n.State() {
@@ -1951,7 +1953,11 @@ func (n *raft) runAsFollower() {
 				n.resetElectionTimeout()
 				n.Unlock()
 			} else {
-				n.switchToCandidate()
+				if n.implicitLeaderLocked() {
+					n.switchToLeader()
+				} else {
+					n.switchToCandidate()
+				}
 				return
 			}
 		case <-n.votes.ch:
@@ -2424,6 +2430,10 @@ func (n *raft) Quorum() bool {
 	return false
 }
 
+func (n *raft) implicitLeaderLocked() bool {
+	return n.csz == 1 || (n.csz == 2 && n.ipeer)
+}
+
 func (n *raft) lostQuorum() bool {
 	n.RLock()
 	defer n.RUnlock()
@@ -2431,6 +2441,10 @@ func (n *raft) lostQuorum() bool {
 }
 
 func (n *raft) lostQuorumLocked() bool {
+	if n.implicitLeaderLocked() {
+		return false
+	}
+
 	// Make sure we let any scale up actions settle before deciding.
 	if !n.lsut.IsZero() && time.Since(n.lsut) < lostQuorumInterval {
 		return false
@@ -3668,6 +3682,7 @@ func decodeVoteRequest(msg []byte, reply string) *voteRequest {
 }
 
 const peerStateFile = "peers.idx"
+const ipeerMarkerFile = "ipeer.mark"
 
 // Lock should be held.
 func (n *raft) writePeerState(ps *peerState) {
