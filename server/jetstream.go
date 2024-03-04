@@ -30,8 +30,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"get.pme.sh/pnats/server/sysmem"
 	"github.com/minio/highwayhash"
-	"github.com/nats-io/nats-server/v2/server/sysmem"
 	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"
 )

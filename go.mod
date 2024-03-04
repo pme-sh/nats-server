@@ -1,4 +1,4 @@
-module github.com/nats-io/nats-server/v2
+module get.pme.sh/pnats
 
 go 1.20
 

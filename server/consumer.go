@@ -28,7 +28,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/nats-io/nats-server/v2/server/avl"
+	"get.pme.sh/pnats/server/avl"
 	"github.com/nats-io/nuid"
 	"golang.org/x/time/rate"
 )

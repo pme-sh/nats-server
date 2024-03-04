@@ -46,9 +46,9 @@ import (
 	crand "crypto/rand"
 	"crypto/sha256"
 
+	"get.pme.sh/pnats/server/avl"
 	"github.com/klauspost/compress/s2"
 	"github.com/nats-io/jwt/v2"
-	"github.com/nats-io/nats-server/v2/server/avl"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"

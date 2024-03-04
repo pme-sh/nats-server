@@ -27,7 +27,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nats-io/nats-server/v2/logger"
+	"get.pme.sh/pnats/logger"
 	"github.com/nats-io/nats.go"
 )
 

@@ -23,7 +23,7 @@ import (
 
 	"golang.org/x/crypto/ocsp"
 
-	"github.com/nats-io/nats-server/v2/server/certidp"
+	"get.pme.sh/pnats/server/certidp"
 )
 
 func parseOCSPPeer(v interface{}) (pcfg *certidp.OCSPPeerConfig, retError error) {

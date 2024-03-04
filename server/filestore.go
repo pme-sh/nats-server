@@ -37,10 +37,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"get.pme.sh/pnats/server/avl"
+	"get.pme.sh/pnats/server/stree"
 	"github.com/klauspost/compress/s2"
 	"github.com/minio/highwayhash"
-	"github.com/nats-io/nats-server/v2/server/avl"
-	"github.com/nats-io/nats-server/v2/server/stree"
 	"golang.org/x/crypto/chacha20"
 	"golang.org/x/crypto/chacha20poly1305"
 )

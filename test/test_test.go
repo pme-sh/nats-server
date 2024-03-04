@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nats-io/nats-server/v2/server"
+	"get.pme.sh/pnats/server"
 	"golang.org/x/time/rate"
 )
 

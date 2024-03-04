@@ -14,7 +14,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/nats-io/nats-server/v2/server"
+	"get.pme.sh/pnats/server"
 )
 
 var tagRe = regexp.MustCompile("\\{(.+?)}")

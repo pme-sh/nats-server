@@ -33,10 +33,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"get.pme.sh/pnats/conf"
+	"get.pme.sh/pnats/server/certidp"
+	"get.pme.sh/pnats/server/certstore"
 	"github.com/nats-io/jwt/v2"
-	"github.com/nats-io/nats-server/v2/conf"
-	"github.com/nats-io/nats-server/v2/server/certidp"
-	"github.com/nats-io/nats-server/v2/server/certstore"
 	"github.com/nats-io/nkeys"
 )
 

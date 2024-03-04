@@ -22,8 +22,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nats-io/nats-server/v2/internal/testhelper"
-	"github.com/nats-io/nats-server/v2/logger"
+	"get.pme.sh/pnats/internal/testhelper"
+	"get.pme.sh/pnats/logger"
 )
 
 func TestSetLogger(t *testing.T) {

@@ -21,8 +21,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/nats-io/nats-server/v2/server/avl"
-	"github.com/nats-io/nats-server/v2/server/stree"
+	"get.pme.sh/pnats/server/avl"
+	"get.pme.sh/pnats/server/stree"
 )
 
 // TODO(dlc) - This is a fairly simplistic approach but should do for now.

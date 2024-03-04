@@ -22,7 +22,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/nats-io/nats-server/v2/server/avl"
+	"get.pme.sh/pnats/server/avl"
 )
 
 // StorageType determines how messages are stored for retention.

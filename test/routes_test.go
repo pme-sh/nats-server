@@ -25,8 +25,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nats-io/nats-server/v2/internal/testhelper"
-	"github.com/nats-io/nats-server/v2/server"
+	"get.pme.sh/pnats/internal/testhelper"
+	"get.pme.sh/pnats/server"
 	"github.com/nats-io/nats.go"
 )
 
